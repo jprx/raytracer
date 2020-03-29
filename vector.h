@@ -97,7 +97,7 @@ class Ray {
 public:
 	Ray(Vector3& pos_in, Vector3& dir_in) : pos(pos_in), dir(dir_in) {}
 
-	Vector3 at (double t) {
+	Vector3 at (double t) const {
 		return pos + (t*dir);
 	}
 

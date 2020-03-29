@@ -4,6 +4,7 @@
 
 #include "raytrace.h"
 #include "vector.h"
+#include "sphere.h"
 
 // Aspect dimensions and number of pixels per "dimension"
 #define ASPECT_X ((3))
@@ -136,8 +137,8 @@ bool render(RenderTarget& img) {
 	sphere_color.b = 0;
 
 	// Test sphere:
-	Vector3 sphere_center = Vector3(0.0,0.0,-1.0);
-	double sphere_radius = 0.65;
+	Sphere s_test(Vector3(0,0,-1), 0.5);
+	CollisionPoint test_point;
 
 	// Iterate over every pixel
 	for (y = 0; y < img.h; y++) {
@@ -147,13 +148,11 @@ bool render(RenderTarget& img) {
 			Ray r = Ray(camera_pos, pointer);
 
 			// Test for collision with sphere:
-			double collision_t = sphere_collision(sphere_center, sphere_radius, r);
-
-			if (-1.0 != collision_t) {
+			if (s_test.hit(r, 0, 100, test_point)) {
 				// Collision detected, draw sphere normals
 				// (Sphere normals are unit vectors that
 				// point from center to ray collision point)
-				Vector3 normal = unit(r.at(collision_t) - sphere_center);
+				Vector3 normal = test_point.normal;
 
 				// Color normal following standard convention:
 				normal = 0.5 * (normal + Vector3(1.0,1.0,1.0));
