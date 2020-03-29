@@ -1,9 +1,11 @@
 #include <iostream>
 #include <signal.h>
 #include <gtk/gtk.h>
+#include <Eigen/Dense>
 
 #include "raytrace.h"
 
+using namespace Eigen;
 using namespace std;
 
 // Application (this needs to be static because of SIGINT)
@@ -33,9 +35,8 @@ bool render(RenderTarget& img) {
 		}
 	}
 
-	img.RenderGTK();
-
-	return true;
+	// Convert internal framebuffer to GTK-friendly version
+	return img.RenderGTK();
 }
 
 // Initial callback upon application creation:

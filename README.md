@@ -1,0 +1,26 @@
+# Raytracer-Boi
+This is a fun little CPU raytracing project that will render
+raytraced images to a GTK window. 
+
+It was written following the
+wonderful book, "Ray Tracing in One Weekend" by Peter Shirley.
+
+Here is the book if you are interested:
+https://raytracing.github.io/books/RayTracingInOneWeekend.html
+
+# Building
+This project is dependent on `libgtk3` and `Eigen`.
+
+On Ubuntu, these can be installed with:
+
+`sudo apt install libgtk-3-dev`
+
+`sudo apt install libeigen3-dev`
+
+This code assumes additionally that `pkg-config` is installed
+on your system, and that `Eigen`'s headers are stored at
+`/usr/include/eigen3`.
+
+Once the dependencies are installed, the project can be built
+with `make` and run with `./raytracer`. A GTK Window should
+pop up with the raytraced output in it.

@@ -53,6 +53,7 @@ public:
 	// Can use this for higher-depth PNG output in the future
 	double *dbuf;
 
+private:
 	// Setter & getter methods for the GTK buffer (gtkbuf)
 	bool setgtkpix(uint x, uint y, uint8_t r, uint8_t g, uint8_t b);
 	bool getgtkpix(uint x, uint y, uint8_t *r, uint8_t *g, uint8_t *b);
