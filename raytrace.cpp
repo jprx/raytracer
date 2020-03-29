@@ -24,14 +24,16 @@ bool render(RenderTarget& img) {
 	uint x, y;
 	color_t c;
 
-	for (x = 0; x < img.w; x++) {
-		for (y = 0; y < img.h; y++) {
-			c.r = x;
-			c.g = y;
-			c.b = 24;
-			img.setpix(x,y,&c); 
+	for (y = 0; y < img.h; y++) {
+		for (x = 0; x < img.w; x++) {
+			c.r = (x*1.0f)/(1.0f*img.w);
+			c.g = (y*1.0f)/(1.0f*img.h);
+			c.b = 1.0f;
+			img.setpix(x,y,&c);
 		}
 	}
+
+	img.RenderGTK();
 
 	return true;
 }
@@ -45,7 +47,7 @@ void myapp_activate(GtkApplication *app, gpointer user_data) {
 
 	// Initialize a GdkPixbuf with the GBytes buffer:
 	GdkPixbuf *imgpixbuf = gdk_pixbuf_new_from_data(
-							(guchar*)render_target->buf,
+							(guchar*)render_target->gtkbuf,
 							GDK_COLORSPACE_RGB,
 							false, // No Alpha
 							8, // 8 bits per sample
