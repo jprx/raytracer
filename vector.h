@@ -8,9 +8,9 @@ public:
 	Vector3() : x(0), y(0), z(0) {}
 	Vector3(double x_in, double y_in, double z_in) : x(x_in), y(y_in), z(z_in) {}
 
-	double getx () { return x; }
-	double gety () { return y; }
-	double getz () { return z; }
+	double getx () const { return x; }
+	double gety () const { return y; }
+	double getz () const { return z; }
 
 	// Negation operator
 	Vector3 operator- () { return Vector3(-x, -y, -z); }
@@ -46,8 +46,8 @@ public:
 	}
 
 	// Length
-	double length() { return sqrt(length_squared()); }
-	double length_squared() { return (x*x) + (y*y) + (z*z); }
+	double length() const { return sqrt(length_squared()); }
+	double length_squared() const { return (x*x) + (y*y) + (z*z); }
 
 	// The internal Cartesian dimensions
 	double x;
@@ -56,36 +56,47 @@ public:
 };
 
 // Misc. other non-member operator overload utilities:
-inline Vector3 operator+ (Vector3& u, Vector3& v) {
+// Mark operands as const in case temporaries are created
+// Example: vectorA + (time * vectorB) 
+// Will create a temporary that is added to vectorA
+inline Vector3 operator+ (const Vector3& u, const Vector3& v) {
 	return Vector3(u.x + v.x, u.y + v.y, u.z + v.z);
 }
 
-inline Vector3 operator- (Vector3& u, Vector3& v) {
+inline Vector3 operator- (const Vector3& u, const Vector3& v) {
 	return Vector3(u.x - v.x, u.y - v.y, u.z - v.z);
 }
 
-inline Vector3 operator* (Vector3& u, Vector3& v) {
+inline Vector3 operator* (const Vector3& u, const Vector3& v) {
 	return Vector3(u.x * v.x, u.y * v.y, u.z * v.z);
 }
 
-inline Vector3 operator* (double t, Vector3& u) {
+inline Vector3 operator* (double t, const Vector3& u) {
 	return Vector3(t * u.x, t * u.y, t * u.z);
 }
 
-inline Vector3 operator* (Vector3& u, double t) {
+inline Vector3 operator* (const Vector3& u, double t) {
 	return Vector3(t * u.x, t * u.y, t * u.z);
 }
 
-inline Vector3 operator/ (Vector3& u, double t) {
+inline Vector3 operator/ (const Vector3& u, double t) {
 	return Vector3 (u.x/t, u.y/t, u.z/t);
 }
 
-inline Vector3 unit (Vector3& u) {
+inline Vector3 unit (const Vector3& u) {
 	return u / u.length();
 }
 
 class Ray {
+public:
+	Ray(Vector3& pos_in, Vector3& dir_in) : pos(pos_in), dir(dir_in) {}
 
+	Vector3 at (double t) {
+		return pos + (t*dir);
+	}
+
+	Vector3 &pos;
+	Vector3 &dir;
 };
 
 #endif

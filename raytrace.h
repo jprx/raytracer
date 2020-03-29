@@ -30,7 +30,7 @@ public:
 	bool setpix(uint x, uint y, color_t *c);
 
 	// Set a pixel to a color, using vector XYZ as RGB channels
-	bool setpix(uint x, uint y, Vector3 &v);
+	bool setpix(uint x, uint y, const Vector3 &v);
 
 	// Get a pixel (returns false if pixel doesn't exist)
 	// Modifies c
@@ -114,7 +114,7 @@ bool RenderTarget::setpix(uint x, uint y, color_t *c) {
 
 // Set a pixel to a color using vector's XYZ as RGB channels
 // Returns true on success, false on failure
-bool RenderTarget::setpix(uint x, uint y, Vector3& v) {
+bool RenderTarget::setpix(uint x, uint y, const Vector3& v) {
 	if (NULL != this->dbuf && this->in_bounds(x,y)) {
 		this->dbuf[((BYTES_PER_PIXEL * (x + this->w * y)) + 0)] = v.x;
 		this->dbuf[((BYTES_PER_PIXEL * (x + this->w * y)) + 1)] = v.y;

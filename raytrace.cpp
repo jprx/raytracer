@@ -31,6 +31,26 @@ bool render_testpattern(RenderTarget& img) {
 	return img.RenderGTK();
 }
 
+// Lerp- Linear interpolate
+// Requires T to implement * and + operators
+// Assumes t only between 0.0 and 1.0
+template <typename T>
+T Lerp (T a, T b, double t) {
+	return ((1.0 - t) * a) + (t * b);
+}
+
+// Returns the sky color for a given ray
+Vector3 get_sky_color (const Ray& r) {
+	// Interpolate down the Y component of the ray
+	// If the ray is pointing to (0,1,0) then do blue
+	// If the ray is poitning to (0,-1,0) then do whiteish
+	// By using a unit vector, we get a beautiful falloff near the bottom
+	// As the vector magnitude changes for X, so equivalent Y values follow a nice subtle curve
+	Vector3 ray_unit = unit(r.dir);
+	double y_dist_from_bottom = (0.5 * ray_unit.y) + 0.5;
+	return Lerp(Vector3(1.0,0.8,1.0), Vector3(0.25, (166.0/255), (254.0/255)), 1.0 - y_dist_from_bottom);
+}
+
 /***************
  * render
  *
@@ -42,11 +62,23 @@ bool render_testpattern(RenderTarget& img) {
 bool render(RenderTarget& img) {
 	uint x, y;
 
+	// We are using a left-handed coord system
+	// (RH coord system but with -z pointing away from camera)
+	// Camera position (0,0,0) looking towards (0,0,-1)
+	Vector3 camera_pos = Vector3(0.0,0.0,0.0);
+	// Vector3 up_dir = Vector3(0.0,1.0,0.0);
+	// Vector3 right_dir = Vector3(1.0,0.0,0.0);
+	// Vector3 forward_dir = Vector3(0.0,0.0,-1.0);
+
+	// Iterate over every pixel
 	for (y = 0; y < img.h; y++) {
 		for (x = 0; x < img.w; x++) {
-			Vector3 col((1.0*x)/img.w,(1.0*y)/img.h,1.0);
-			img.setpix(x,y,col);
+			// Trace out vectors that form a square from -1 to 1 on both dimensions
+			Vector3 pointer = Vector3(2.0 * (x*1.0/img.w) - 1.0, 2.0 * (y*1.0/img.h) - 1.0, -1.0);
+			Ray r = Ray(camera_pos, pointer);
+			img.setpix(x,y,get_sky_color(r));
 		}
+		printf("[%d]: %f\n", y, (y*1.0/img.h));
 	}
 
 	// Convert internal framebuffer to GTK-friendly version
