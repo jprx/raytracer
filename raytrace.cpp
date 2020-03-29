@@ -62,7 +62,7 @@ Vector3 get_sky_color (const Ray& r) {
 // Returns whether a ray intersects a given sphere
 // See my math writeup for a derivation of this formula
 bool sphere_collision (const Vector3& center, double radius, const Ray& ray) {
-	/* Long story short, we need to solve the vector algebra equation in t:
+	/* To find intersections, we need to solve the vector algebra equation in t:
 	 *
 	 * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
 	 *
@@ -75,15 +75,16 @@ bool sphere_collision (const Vector3& center, double radius, const Ray& ray) {
 	 */
 
 	// We only care if the number of solutions > 0 (sphere is hit)
-	double t_squared_coeff = dot(ray.dir, ray.dir);
-	double t_coeff = dot (ray.dir, (ray.pos - center));
+	Vector3 direction = ray.dir; // Could make this unit
+	double t_squared_coeff = dot(direction, direction);
+	double t_coeff = 2.0 * dot (direction, (ray.pos - center));
 	double const_coeff = dot(ray.pos - center, ray.pos - center);
 
 	// To set quadratic equation to 0, we subtract radius squared from const term
-	const_coeff -= radius*radius;
+	const_coeff -= (radius*radius);
 
 	// Return whether b^2 - 4ac > 0
-	return (t_coeff * t_coeff > 4 * t_squared_coeff * const_coeff);
+	return (t_coeff * t_coeff - 4 * t_squared_coeff * const_coeff > 0);
 }
 
 /***************
@@ -116,7 +117,7 @@ bool render(RenderTarget& img) {
 			// Trace out vectors that form a square from -1 to 1 on both dimensions
 			Vector3 pointer = Vector3(ASPECT_X * (2.0 * (x*1.0/img.w) - 1.0), ASPECT_Y * (2.0 * (y*1.0/img.h) - 1.0), -1.0);
 			Ray r = Ray(camera_pos, pointer);
-			if (sphere_collision(Vector3(0,0,-1), 0.96, r)) {
+			if (sphere_collision(Vector3(0.0,0.0,-1), 0.5, r)) {
 				img.setpix(x,y,&sphere_color);
 			}
 			else {
