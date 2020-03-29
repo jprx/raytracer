@@ -195,6 +195,40 @@ void myapp_activate(GtkApplication *app, gpointer user_data);
  ***************/
 bool render(RenderTarget& img);
 
+/**************************************
+ *
+ * sphere_collision
+ *
+ * Returns what scalar multiple of direction added
+ * to a Ray's origin results in an intersection with 
+ * the given sphere.
+ *
+ * See my math writeup for a derivation of this formula
+ *
+ * Returns -1.0 for no collision, or the closest t value
+ * if a collision is detected.
+ *
+ * Inputs: 
+ * Vector3 center: center of the sphere
+ * double radius: radius of the sphere
+ * Ray ray: the ray to cast
+ *
+ * Side Effects: None
+ *
+ * To find intersections, we need to solve the vector algebra equation in t:
+ *
+ * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
+ *
+ * a is the origin of our ray, b is its direction vector, and c is 
+ * the center of the sphere.
+ *
+ * 0 solution = no collision
+ * 1 solution = just touch edge of sphere
+ * 2 solutions = pass through sphere and collide in two places
+ *
+ **************************************/
+double sphere_collision (const Vector3& center, double radius, const Ray& ray);
+
 bool render_testpattern(RenderTarget& img);
 
 #endif

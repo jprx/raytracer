@@ -59,21 +59,39 @@ Vector3 get_sky_color (const Ray& r) {
 	return Lerp(Vector3(1.0,1.0,1.0), Vector3(0.25, (166.0/255), (254.0/255)), 1.0 - y_dist_from_bottom);
 }
 
-// Returns whether a ray intersects a given sphere
-// See my math writeup for a derivation of this formula
-bool sphere_collision (const Vector3& center, double radius, const Ray& ray) {
-	/* To find intersections, we need to solve the vector algebra equation in t:
-	 *
-	 * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
-	 *
-	 * a is the origin of our ray, b is its direction vector, and c is 
-	 * the center of the sphere.
-	 *
-	 * 0 solution = no collision
-	 * 1 solution = just touch edge of sphere
-	 * 2 solutions = pass through sphere and collide in two places
-	 */
-
+/**************************************
+ *
+ * sphere_collision
+ *
+ * Returns what scalar multiple of direction added
+ * to a Ray's origin results in an intersection with 
+ * the given sphere.
+ *
+ * See my math writeup for a derivation of this formula
+ *
+ * Returns -1.0 for no collision, or the closest t value
+ * if a collision is detected.
+ *
+ * Inputs: 
+ * Vector3 center: center of the sphere
+ * double radius: radius of the sphere
+ * Ray ray: the ray to cast
+ *
+ * Side Effects: None
+ *
+ * To find intersections, we need to solve the vector algebra equation in t:
+ *
+ * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
+ *
+ * a is the origin of our ray, b is its direction vector, and c is 
+ * the center of the sphere.
+ *
+ * 0 solution = no collision
+ * 1 solution = just touch edge of sphere
+ * 2 solutions = pass through sphere and collide in two places
+ *
+ **************************************/
+double sphere_collision (const Vector3& center, double radius, const Ray& ray) {
 	// We only care if the number of solutions > 0 (sphere is hit)
 	Vector3 direction = ray.dir; // Could make this unit
 	double t_squared_coeff = dot(direction, direction);
@@ -83,8 +101,14 @@ bool sphere_collision (const Vector3& center, double radius, const Ray& ray) {
 	// To set quadratic equation to 0, we subtract radius squared from const term
 	const_coeff -= (radius*radius);
 
-	// Return whether b^2 - 4ac > 0
-	return (t_coeff * t_coeff - 4 * t_squared_coeff * const_coeff > 0);
+	// Return -1 for no collision, or the closest t value for a collision
+	double inside_sqrt = t_coeff * t_coeff - 4 * t_squared_coeff * const_coeff;
+	if (inside_sqrt > 0) {
+		// Solve quadratic, chose -sqrt(b^2 - 4ac)
+		return ((-1.0 * t_coeff) - sqrt(inside_sqrt)) / (2.0 * t_squared_coeff);
+	}
+
+	return -1.0;
 }
 
 /***************
@@ -111,16 +135,33 @@ bool render(RenderTarget& img) {
 	sphere_color.g = 0;
 	sphere_color.b = 0;
 
+	// Test sphere:
+	Vector3 sphere_center = Vector3(0.0,0.0,-1.0);
+	double sphere_radius = 0.65;
+
 	// Iterate over every pixel
 	for (y = 0; y < img.h; y++) {
 		for (x = 0; x < img.w; x++) {
 			// Trace out vectors that form a square from -1 to 1 on both dimensions
 			Vector3 pointer = Vector3(ASPECT_X * (2.0 * (x*1.0/img.w) - 1.0), ASPECT_Y * (2.0 * (y*1.0/img.h) - 1.0), -1.0);
 			Ray r = Ray(camera_pos, pointer);
-			if (sphere_collision(Vector3(0.0,0.0,-1), 0.5, r)) {
-				img.setpix(x,y,&sphere_color);
+
+			// Test for collision with sphere:
+			double collision_t = sphere_collision(sphere_center, sphere_radius, r);
+
+			if (-1.0 != collision_t) {
+				// Collision detected, draw sphere normals
+				// (Sphere normals are unit vectors that
+				// point from center to ray collision point)
+				Vector3 normal = unit(r.at(collision_t) - sphere_center);
+
+				// Color normal following standard convention:
+				normal = 0.5 * (normal + Vector3(1.0,1.0,1.0));
+
+				img.setpix(x,y,normal);
 			}
 			else {
+				// No collision, draw sky
 				img.setpix(x,y,get_sky_color(r));
 			}
 		}
