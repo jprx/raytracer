@@ -1,5 +1,10 @@
+#ifndef RAYTRACE_H
+#define RAYTRACE_H
+
 #include <sys/types.h>
 #include <stdlib.h>
+
+#include "vector.h"
 
 // Largest image memory allocated allowed
 #define BYTES_PER_PIXEL 3 // RGB, no A
@@ -23,6 +28,9 @@ public:
 
 	// Set a pixel to a color
 	bool setpix(uint x, uint y, color_t *c);
+
+	// Set a pixel to a color, using vector XYZ as RGB channels
+	bool setpix(uint x, uint y, Vector3 &v);
 
 	// Get a pixel (returns false if pixel doesn't exist)
 	// Modifies c
@@ -104,6 +112,18 @@ bool RenderTarget::setpix(uint x, uint y, color_t *c) {
 	return false;
 }
 
+// Set a pixel to a color using vector's XYZ as RGB channels
+// Returns true on success, false on failure
+bool RenderTarget::setpix(uint x, uint y, Vector3& v) {
+	if (NULL != this->dbuf && this->in_bounds(x,y)) {
+		this->dbuf[((BYTES_PER_PIXEL * (x + this->w * y)) + 0)] = v.x;
+		this->dbuf[((BYTES_PER_PIXEL * (x + this->w * y)) + 1)] = v.y;
+		this->dbuf[((BYTES_PER_PIXEL * (x + this->w * y)) + 2)] = v.z;
+		return true;
+	}
+	return false;
+}
+
 // Get a pixel (returns false if pixel doesn't exist)
 // Modifies c
 bool RenderTarget::getpix (uint x, uint y, color_t *c) {
@@ -174,3 +194,7 @@ void myapp_activate(GtkApplication *app, gpointer user_data);
  * Side Effects: Changes RenderTarget's buf parameter
  ***************/
 bool render(RenderTarget& img);
+
+bool render_testpattern(RenderTarget& img);
+
+#endif

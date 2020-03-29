@@ -1,6 +1,9 @@
 
-raytrace : raytrace.cpp raytrace.h
-	g++ -I /usr/include/eigen3/ `pkg-config --cflags gtk+-3.0` raytrace.cpp -o raytrace `pkg-config --libs gtk+-3.0`
+raytrace : raytrace.cpp raytrace.h vector.o
+	g++ `pkg-config --cflags gtk+-3.0` vector.o raytrace.cpp -o raytrace `pkg-config --libs gtk+-3.0`
+
+vector.o : vector.cpp vector.h
+	g++ vector.cpp -c `pkg-config --libs gtk+-3.0`
 
 clean : 
-	rm raytrace
+	rm -f raytrace vector.o

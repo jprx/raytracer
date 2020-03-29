@@ -1,11 +1,10 @@
 #include <iostream>
 #include <signal.h>
 #include <gtk/gtk.h>
-#include <Eigen/Dense>
 
 #include "raytrace.h"
+#include "vector.h"
 
-using namespace Eigen;
 using namespace std;
 
 // Application (this needs to be static because of SIGINT)
@@ -13,6 +12,24 @@ static GtkApplication *__app__ = NULL;
 
 // Image render target
 static RenderTarget *render_target = NULL;
+
+// Render a quick testpattern to ensure everything is working
+bool render_testpattern(RenderTarget& img) {
+	uint x, y;
+	color_t c;
+
+	for (y = 0; y < img.h; y++) {
+		for (x = 0; x < img.w; x++) {
+			c.r = (x*1.0f)/(1.0f*img.w);
+			c.g = (y*1.0f)/(1.0f*img.h);
+			c.b = 1.0f;
+			img.setpix(x,y,&c);
+		}
+	}
+
+	// Convert internal framebuffer to GTK-friendly version
+	return img.RenderGTK();
+}
 
 /***************
  * render
@@ -24,14 +41,11 @@ static RenderTarget *render_target = NULL;
  ***************/
 bool render(RenderTarget& img) {
 	uint x, y;
-	color_t c;
 
 	for (y = 0; y < img.h; y++) {
 		for (x = 0; x < img.w; x++) {
-			c.r = (x*1.0f)/(1.0f*img.w);
-			c.g = (y*1.0f)/(1.0f*img.h);
-			c.b = 1.0f;
-			img.setpix(x,y,&c);
+			Vector3 col((1.0*x)/img.w,(1.0*y)/img.h,1.0);
+			img.setpix(x,y,col);
 		}
 	}
 

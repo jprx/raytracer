@@ -9,17 +9,14 @@ Here is the book if you are interested:
 https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 # Building
-This project is dependent on `libgtk3` and `Eigen`.
+This project is dependent on `libgtk3`.
 
-On Ubuntu, these can be installed with:
+On Ubuntu, this can be installed with:
 
 `sudo apt install libgtk-3-dev`
 
-`sudo apt install libeigen3-dev`
-
 This code assumes additionally that `pkg-config` is installed
-on your system, and that `Eigen`'s headers are stored at
-`/usr/include/eigen3`.
+on your system.
 
 Once the dependencies are installed, the project can be built
 with `make` and run with `./raytracer`. A GTK Window should
