@@ -87,6 +87,12 @@ inline Vector3 unit (const Vector3& u) {
 	return u / u.length();
 }
 
+inline double dot (const Vector3& u, const Vector3& v) {
+	return u.x * v.x +
+		   u.y * v.y +
+		   u.z * v.z;
+}
+
 class Ray {
 public:
 	Ray(Vector3& pos_in, Vector3& dir_in) : pos(pos_in), dir(dir_in) {}

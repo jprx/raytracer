@@ -5,6 +5,14 @@
 #include "raytrace.h"
 #include "vector.h"
 
+// Aspect dimensions and number of pixels per "dimension"
+#define ASPECT_X ((3))
+#define ASPECT_Y ((2))
+#define RESOLUTION_SCALER ((200))
+
+#define DIM_X ((RESOLUTION_SCALER * ASPECT_X))
+#define DIM_Y ((RESOLUTION_SCALER * ASPECT_Y))
+
 using namespace std;
 
 // Application (this needs to be static because of SIGINT)
@@ -48,7 +56,34 @@ Vector3 get_sky_color (const Ray& r) {
 	// As the vector magnitude changes for X, so equivalent Y values follow a nice subtle curve
 	Vector3 ray_unit = unit(r.dir);
 	double y_dist_from_bottom = (0.5 * ray_unit.y) + 0.5;
-	return Lerp(Vector3(1.0,0.8,1.0), Vector3(0.25, (166.0/255), (254.0/255)), 1.0 - y_dist_from_bottom);
+	return Lerp(Vector3(1.0,1.0,1.0), Vector3(0.25, (166.0/255), (254.0/255)), 1.0 - y_dist_from_bottom);
+}
+
+// Returns whether a ray intersects a given sphere
+// See my math writeup for a derivation of this formula
+bool sphere_collision (const Vector3& center, double radius, const Ray& ray) {
+	/* Long story short, we need to solve the vector algebra equation in t:
+	 *
+	 * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
+	 *
+	 * a is the origin of our ray, b is its direction vector, and c is 
+	 * the center of the sphere.
+	 *
+	 * 0 solution = no collision
+	 * 1 solution = just touch edge of sphere
+	 * 2 solutions = pass through sphere and collide in two places
+	 */
+
+	// We only care if the number of solutions > 0 (sphere is hit)
+	double t_squared_coeff = dot(ray.dir, ray.dir);
+	double t_coeff = dot (ray.dir, (ray.pos - center));
+	double const_coeff = dot(ray.pos - center, ray.pos - center);
+
+	// To set quadratic equation to 0, we subtract radius squared from const term
+	const_coeff -= radius*radius;
+
+	// Return whether b^2 - 4ac > 0
+	return (t_coeff * t_coeff > 4 * t_squared_coeff * const_coeff);
 }
 
 /***************
@@ -61,6 +96,7 @@ Vector3 get_sky_color (const Ray& r) {
  ***************/
 bool render(RenderTarget& img) {
 	uint x, y;
+	color_t sphere_color;
 
 	// We are using a left-handed coord system
 	// (RH coord system but with -z pointing away from camera)
@@ -70,15 +106,23 @@ bool render(RenderTarget& img) {
 	// Vector3 right_dir = Vector3(1.0,0.0,0.0);
 	// Vector3 forward_dir = Vector3(0.0,0.0,-1.0);
 
+	sphere_color.r = 0;
+	sphere_color.g = 0;
+	sphere_color.b = 0;
+
 	// Iterate over every pixel
 	for (y = 0; y < img.h; y++) {
 		for (x = 0; x < img.w; x++) {
 			// Trace out vectors that form a square from -1 to 1 on both dimensions
-			Vector3 pointer = Vector3(2.0 * (x*1.0/img.w) - 1.0, 2.0 * (y*1.0/img.h) - 1.0, -1.0);
+			Vector3 pointer = Vector3(ASPECT_X * (2.0 * (x*1.0/img.w) - 1.0), ASPECT_Y * (2.0 * (y*1.0/img.h) - 1.0), -1.0);
 			Ray r = Ray(camera_pos, pointer);
-			img.setpix(x,y,get_sky_color(r));
+			if (sphere_collision(Vector3(0,0,-1), 0.96, r)) {
+				img.setpix(x,y,&sphere_color);
+			}
+			else {
+				img.setpix(x,y,get_sky_color(r));
+			}
 		}
-		printf("[%d]: %f\n", y, (y*1.0/img.h));
 	}
 
 	// Convert internal framebuffer to GTK-friendly version
@@ -112,7 +156,7 @@ void myapp_activate(GtkApplication *app, gpointer user_data) {
 	// Create window
 	window = gtk_application_window_new (app);
 	gtk_window_set_title (GTK_WINDOW(window), "Raytracer Boi");
-	gtk_window_set_default_size (GTK_WINDOW(window), 640, 480);
+	gtk_window_set_default_size (GTK_WINDOW(window), DIM_X, DIM_Y);
 
 	// Attach image to window
 	gtk_container_add(GTK_CONTAINER (window), image_widget);
@@ -129,7 +173,7 @@ int main (int argc, char **argv) {
 	signal(SIGINT, sigint_handler);
 
 	// Create image buffer:
-	render_target = new RenderTarget(640, 480);
+	render_target = new RenderTarget(DIM_X, DIM_Y);
 
 	// Allocate GTK app:
 	__app__ = gtk_application_new("org.jprx.cpu_raytracer", G_APPLICATION_FLAGS_NONE);
