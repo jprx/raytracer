@@ -6,6 +6,8 @@
 #include "vector.h"
 #include "sphere.h"
 #include "RenderTarget.h"
+#include "material.h"
+#include "utils.h"
 
 // Application (this needs to be static because of SIGINT)
 static GtkApplication *__app__ = NULL;
@@ -76,10 +78,11 @@ Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint 
 	if (hit_something) {
 		if (hit_light) { return Vector3(1,1,1); }
 		// Bounce & find new direction
-		Vector3 random_dir = Vector3(rand_range(-1.0,1.0), rand_range(-1.0,1.0), rand_range(-1.0,1.0));
-		random_dir /= random_dir.length();
-		Ray next_ray = Ray(closest_point.pos, closest_point.normal + random_dir);
-		return 0.5 * raytrace(next_ray, objects, curdepth+1);
+		Diffuse diffuse(Vector3(0.5,0.5,0.5));
+		Ray next_ray;
+		Vector3 attenuation;
+		diffuse.scatter_ray(ray, closest_point, next_ray, attenuation);
+		return attenuation * raytrace(next_ray, objects, curdepth+1);
 	}
 	else {
 		// No collision, draw sky
