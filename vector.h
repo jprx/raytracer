@@ -95,14 +95,14 @@ inline double dot (const Vector3& u, const Vector3& v) {
 
 class Ray {
 public:
-	Ray(Vector3& pos_in, Vector3& dir_in) : pos(pos_in), dir(dir_in) {}
+	Ray(const Vector3& pos_in, const Vector3& dir_in) : pos(pos_in), dir(dir_in) {}
 
 	Vector3 at (double t) const {
 		return pos + (t*dir);
 	}
 
-	Vector3 &pos;
-	Vector3 &dir;
+	const Vector3 &pos;
+	const Vector3 &dir;
 };
 
 #endif

@@ -20,6 +20,12 @@
 // Number of samples per pixel (for anti-aliasing)
 #define NUM_SAMPLES 100
 
+// How deep can rays bounce? (Number of bounces before terminating)
+#define RAY_BOUNCE_DEPTH 100
+
+// How many characters wide is the progress bar?
+#define PROGRESS_BAR_WIDTH 60
+
 using namespace std;
 
 // Application (this needs to be static because of SIGINT)
@@ -132,6 +138,63 @@ double sphere_collision (const Vector3& center, double radius, const Ray& ray) {
 }
 
 /***************
+ * raytrace
+ *
+ * Recursively traces a ray through the provided set
+ * of WorldObjects. Terminates when the maxmimum
+ * recursion depth is exceeded, or when the ray
+ * hits the sky.
+ *
+ * Inputs: ray - the ray to test
+ *         objects - the array of objects to test
+ *         curdepth - the current recursion depth
+ * Outputs: the color (as Vector3) this ray ended up at
+ * Side Effects: None
+ ***************/
+Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint curdepth) {
+	CollisionPoint test_point, closest_point;
+
+	// Have we hit something in the world?
+	bool hit_something = false;
+	bool hit_light = false;
+
+	// Test for collision with all objects in list of world objects
+	double closest_hit = Infinity;
+
+	// Recursion depth exceeded, return default diffuse
+	if (curdepth > RAY_BOUNCE_DEPTH) {
+		return Vector3(0,0,0);
+	}
+
+	// Iterate over all objects
+	int i = 0;
+	for (WorldObject *obj : objects) {
+		if (obj->hit(ray, 0.00001, Infinity, test_point)) {
+			hit_something = true;
+			if (test_point.t_collision < closest_hit) {
+				closest_hit = test_point.t_collision;
+				closest_point = test_point;
+				//if (i == 1) { hit_light = true; }
+			}
+		}
+		i++;
+	}
+
+	if (hit_something) {
+		if (hit_light) { return Vector3(1,1,1); }
+		// Bounce & find new direction
+		Vector3 random_dir = Vector3(rand_range(-1.0,1.0), rand_range(-1.0,1.0), rand_range(-1.0,1.0));
+		random_dir /= random_dir.length();
+		Ray next_ray = Ray(closest_point.pos, closest_point.normal + random_dir);
+		return 0.5 * raytrace(next_ray, objects, curdepth+1);
+	}
+	else {
+		// No collision, draw sky
+		return get_sky_color(ray);
+	}
+}
+
+/***************
  * render
  *
  * Renders into a given RenderTarget (img)
@@ -151,55 +214,51 @@ bool render(RenderTarget& img) {
 	// Vector3 forward_dir = Vector3(0.0,0.0,-1.0);
 
 	// World Objects:
-	WorldObject *objects[2];
-	objects[0] = new Sphere(Vector3(0,0,-1), 0.5);
-	objects[1] = new Sphere(Vector3(0,-100.5, 0), 100);
-	CollisionPoint test_point, closest_point;
+	std::vector<WorldObject*> objects;
+	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5));
+	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100));
 
 	// Iterate over every pixel
+	printf("Raytracing!\n");
 	for (y = 0; y < img.h; y++) {
+		// Print progress bar:
+		if (y % 10 == 0) {
+			double progress = (y*100)/img.h;
+
+			printf("[");
+			for (uint pbar = 0; pbar < PROGRESS_BAR_WIDTH; pbar++) {
+				if (progress > (pbar*100)/PROGRESS_BAR_WIDTH) printf ("=");
+				else printf(" ");
+			}
+			printf("]");
+			std::cout << " " << progress << "%\r";
+			std::cout.flush();
+		}
+
 		for (x = 0; x < img.w; x++) {
 			Vector3 pixel_color = Vector3(0,0,0);
 
 			// Trace out vectors that form a square from -1 to 1 on both dimensions
 			for (uint sample = 0; sample < NUM_SAMPLES; sample++) {
-				Vector3 pointer = Vector3(ASPECT_X * (2.0 * ((x*1.0+rand_double())/img.w) - 1.0), ASPECT_Y * (2.0 * ((img.h-y+rand_double())*1.0/img.h) - 1.0), -1.0);
+				Vector3 pointer = Vector3(ASPECT_X * (2.0 * ((x*1.0+rand_range(-1,1))/img.w) - 1.0), ASPECT_Y * (2.0 * ((img.h-y+rand_range(-1,1))*1.0/img.h) - 1.0), -1.0);
 				Ray r = Ray(camera_pos, pointer);
-				bool hit_something = false;
-
-				// Test for collision with all objects in list of world objects
-				double closest_hit = Infinity;
-				for (WorldObject *obj : objects) {
-					if (obj->hit(r, 0, Infinity, test_point)) {
-						hit_something = true;
-						if (test_point.t_collision < closest_hit) {
-							closest_hit = test_point.t_collision;
-							closest_point = test_point;
-						}
-					}
-				}
-
-				if (hit_something) {
-					// Collision detected, draw sphere normals
-					Vector3 normal = closest_point.normal;
-
-					// Color normal following standard convention:
-					normal = 0.5 * (normal + Vector3(1.0,1.0,1.0));
-
-					//img.setpix(x,y,normal);
-					pixel_color += normal;
-				}
-				else {
-					// No collision, draw sky
-					//img.setpix(x,y,get_sky_color(r));
-					pixel_color += get_sky_color(r);
-				}
+				
+				pixel_color += raytrace(r, objects, 0);
 			}
 
 			pixel_color /= NUM_SAMPLES;
 			img.setpix(x,y,pixel_color);
 		}
 	}
+
+	// Display done message!
+	printf("[");
+	for (uint pbar = 0; pbar < PROGRESS_BAR_WIDTH; pbar++) {
+		printf ("=");
+	}
+	printf("]");
+	std::cout << " " << 100 << "%\r\n" << "Done!\n";
+	std::cout.flush();
 
 	// Convert internal framebuffer to GTK-friendly version
 	return img.RenderGTK();
@@ -269,7 +328,7 @@ int main (int argc, char **argv) {
 
 // Cleanup and close down GTK app
 void sigint_handler(int signum) {
-	printf("Goodbye!\n");
+	printf("\nGoodbye!\n");
 	delete render_target;
 	g_object_unref(__app__);
 	exit(0);

@@ -1,4 +1,7 @@
 # Raytracer-Boi
+
+![render.png](outputs/render.png "Render")
+
 This is a fun little CPU raytracing project that will render
 raytraced images to a GTK window. 
 
