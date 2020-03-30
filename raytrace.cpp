@@ -48,10 +48,10 @@ Vector3 get_sky_color (const Ray& r) {
  ***************/
 Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint curdepth) {
 	CollisionPoint test_point, closest_point;
+	Material *hit_mat = NULL;
 
 	// Have we hit something in the world?
 	bool hit_something = false;
-	bool hit_light = false;
 
 	// Test for collision with all objects in list of world objects
 	double closest_hit = Infinity;
@@ -62,26 +62,22 @@ Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint 
 	}
 
 	// Iterate over all objects
-	int i = 0;
 	for (WorldObject *obj : objects) {
 		if (obj->hit(ray, 0.00001, Infinity, test_point)) {
 			hit_something = true;
 			if (test_point.t_collision < closest_hit) {
 				closest_hit = test_point.t_collision;
 				closest_point = test_point;
-				if (i == 2) { hit_light = true; }
+				hit_mat = &obj->material;
 			}
 		}
-		i++;
 	}
 
 	if (hit_something) {
-		if (hit_light) { return Vector3(1,1,1); }
-		// Bounce & find new direction
-		Diffuse diffuse(Vector3(0.5,0.5,0.5));
+		// Scatter according to the object's material
 		Ray next_ray;
 		Vector3 attenuation;
-		diffuse.scatter_ray(ray, closest_point, next_ray, attenuation);
+		(*hit_mat).scatter_ray(ray, closest_point, next_ray, attenuation);
 		return attenuation * raytrace(next_ray, objects, curdepth+1);
 	}
 	else {
@@ -111,8 +107,10 @@ bool render(RenderTarget& img) {
 
 	// World Objects:
 	std::vector<WorldObject*> objects;
-	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5));
-	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100));
+	Diffuse diffuse_mat1 = Diffuse(Vector3(0.5,0.5,0.5));
+	Diffuse diffuse_mat2 = Diffuse(Vector3(0,0.75,0));
+	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, diffuse_mat1));
+	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100, diffuse_mat2));
 
 	// Iterate over every pixel
 	printf("Raytracing!\n");
