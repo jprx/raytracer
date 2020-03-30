@@ -1,4 +1,5 @@
 #include "sphere.h"
+#include "vector.h"
 
 // Sphere ray collision detection
 bool Sphere::hit(const Ray& ray, double t_min, double t_max, CollisionPoint& point) const {

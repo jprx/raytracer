@@ -1,6 +1,8 @@
 #include <iostream>
 #include <signal.h>
 #include <gtk/gtk.h>
+#include <limits>
+#include <cstdlib>
 
 #include "raytrace.h"
 #include "vector.h"
@@ -9,10 +11,14 @@
 // Aspect dimensions and number of pixels per "dimension"
 #define ASPECT_X ((3))
 #define ASPECT_Y ((2))
-#define RESOLUTION_SCALER ((200))
+#define RESOLUTION_SCALER ((300))
 
+// Image pixel dimensions
 #define DIM_X ((RESOLUTION_SCALER * ASPECT_X))
 #define DIM_Y ((RESOLUTION_SCALER * ASPECT_Y))
+
+// Number of samples per pixel (for anti-aliasing)
+#define NUM_SAMPLES 100
 
 using namespace std;
 
@@ -21,6 +27,9 @@ static GtkApplication *__app__ = NULL;
 
 // Image render target
 static RenderTarget *render_target = NULL;
+
+// Largest value allowed for a double
+static double Infinity = std::numeric_limits<double>::infinity();
 
 // Render a quick testpattern to ensure everything is working
 bool render_testpattern(RenderTarget& img) {
@@ -57,7 +66,17 @@ Vector3 get_sky_color (const Ray& r) {
 	// As the vector magnitude changes for X, so equivalent Y values follow a nice subtle curve
 	Vector3 ray_unit = unit(r.dir);
 	double y_dist_from_bottom = (0.5 * ray_unit.y) + 0.5;
-	return Lerp(Vector3(1.0,1.0,1.0), Vector3(0.25, (166.0/255), (254.0/255)), 1.0 - y_dist_from_bottom);
+	return Lerp(Vector3(1.0,1.0,1.0), Vector3(0.25, (166.0/255), (254.0/255)), y_dist_from_bottom);
+}
+
+// Returns a random double [0.0,1.0)
+double rand_double() {
+	// Adding the 1.0 prevents this from ever returning RAND_MAX
+	return rand() / (RAND_MAX + 1.0);
+}
+
+double rand_range(double min, double max) {
+	return Lerp(min, max, rand_double());
 }
 
 /**************************************
@@ -122,7 +141,6 @@ double sphere_collision (const Vector3& center, double radius, const Ray& ray) {
  ***************/
 bool render(RenderTarget& img) {
 	uint x, y;
-	color_t sphere_color;
 
 	// We are using a left-handed coord system
 	// (RH coord system but with -z pointing away from camera)
@@ -132,37 +150,54 @@ bool render(RenderTarget& img) {
 	// Vector3 right_dir = Vector3(1.0,0.0,0.0);
 	// Vector3 forward_dir = Vector3(0.0,0.0,-1.0);
 
-	sphere_color.r = 0;
-	sphere_color.g = 0;
-	sphere_color.b = 0;
-
-	// Test sphere:
-	Sphere s_test(Vector3(0,0,-1), 0.5);
-	CollisionPoint test_point;
+	// World Objects:
+	WorldObject *objects[2];
+	objects[0] = new Sphere(Vector3(0,0,-1), 0.5);
+	objects[1] = new Sphere(Vector3(0,-100.5, 0), 100);
+	CollisionPoint test_point, closest_point;
 
 	// Iterate over every pixel
 	for (y = 0; y < img.h; y++) {
 		for (x = 0; x < img.w; x++) {
+			Vector3 pixel_color = Vector3(0,0,0);
+
 			// Trace out vectors that form a square from -1 to 1 on both dimensions
-			Vector3 pointer = Vector3(ASPECT_X * (2.0 * (x*1.0/img.w) - 1.0), ASPECT_Y * (2.0 * (y*1.0/img.h) - 1.0), -1.0);
-			Ray r = Ray(camera_pos, pointer);
+			for (uint sample = 0; sample < NUM_SAMPLES; sample++) {
+				Vector3 pointer = Vector3(ASPECT_X * (2.0 * ((x*1.0+rand_double())/img.w) - 1.0), ASPECT_Y * (2.0 * ((img.h-y+rand_double())*1.0/img.h) - 1.0), -1.0);
+				Ray r = Ray(camera_pos, pointer);
+				bool hit_something = false;
 
-			// Test for collision with sphere:
-			if (s_test.hit(r, 0, 100, test_point)) {
-				// Collision detected, draw sphere normals
-				// (Sphere normals are unit vectors that
-				// point from center to ray collision point)
-				Vector3 normal = test_point.normal;
+				// Test for collision with all objects in list of world objects
+				double closest_hit = Infinity;
+				for (WorldObject *obj : objects) {
+					if (obj->hit(r, 0, Infinity, test_point)) {
+						hit_something = true;
+						if (test_point.t_collision < closest_hit) {
+							closest_hit = test_point.t_collision;
+							closest_point = test_point;
+						}
+					}
+				}
 
-				// Color normal following standard convention:
-				normal = 0.5 * (normal + Vector3(1.0,1.0,1.0));
+				if (hit_something) {
+					// Collision detected, draw sphere normals
+					Vector3 normal = closest_point.normal;
 
-				img.setpix(x,y,normal);
+					// Color normal following standard convention:
+					normal = 0.5 * (normal + Vector3(1.0,1.0,1.0));
+
+					//img.setpix(x,y,normal);
+					pixel_color += normal;
+				}
+				else {
+					// No collision, draw sky
+					//img.setpix(x,y,get_sky_color(r));
+					pixel_color += get_sky_color(r);
+				}
 			}
-			else {
-				// No collision, draw sky
-				img.setpix(x,y,get_sky_color(r));
-			}
+
+			pixel_color /= NUM_SAMPLES;
+			img.setpix(x,y,pixel_color);
 		}
 	}
 
@@ -212,6 +247,8 @@ int main (int argc, char **argv) {
 
 	// SIGINT handler (just in case ;D):
 	signal(SIGINT, sigint_handler);
+
+	srand(time(NULL));
 
 	// Create image buffer:
 	render_target = new RenderTarget(DIM_X, DIM_Y);
