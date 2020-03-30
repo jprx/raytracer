@@ -12,7 +12,6 @@ bool Diffuse::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out,
 
 	// Diffuse objects attenuate by color:
 	attenuation_out = this->color;
-	//ray_out = next_ray;
 
 	return true;
 }
@@ -21,4 +20,21 @@ bool Diffuse::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out,
 bool Emissive::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out, Vector3& attenuation_out) {
 	attenuation_out = this->color;
 	return false;
+}
+
+// Reflect a vector across a normal:
+Vector3 reflect(const Vector3& v, const Vector3& norm) {
+	return v - 2.0 * dot (v,norm) * norm;
+}
+
+// Bounce reflectively
+bool Metal::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out, Vector3& attenuation_out) {
+	// Reflect ray across normal:
+	Vector3 reflected = reflect(unit(ray_in.dir), point.normal);
+	ray_out = Ray(point.pos, reflected);
+
+	// Diffuse objects attenuate by color:
+	attenuation_out = this->color;
+
+	return true;
 }

@@ -114,8 +114,11 @@ bool render(RenderTarget& img) {
 	std::vector<WorldObject*> objects;
 	Diffuse diffuse_mat = Diffuse(Vector3(0.5,0.5,0.5));
 	Emissive emissive_mat = Emissive(Vector3(1,1,1));
-	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, emissive_mat));
+	Metal metal_mat = Metal(Vector3(0.75,0.75,0.75));
+
+	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, diffuse_mat));
 	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100, diffuse_mat));
+	objects.push_back(new Sphere(Vector3(-1.5,0,-1), 0.5, metal_mat));
 
 	// Iterate over every pixel
 	printf("Raytracing!\n");

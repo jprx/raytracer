@@ -38,4 +38,14 @@ public:
 	Vector3 color;
 };
 
+class Metal : public Material {
+public:
+	Metal() : color(Vector3(1,1,1)) {}
+	Metal(const Vector3& color_in) : color(color_in) {}
+
+	bool scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out, Vector3& attenuation_out);
+
+	Vector3 color;
+};
+
 #endif
