@@ -116,9 +116,31 @@ bool render(RenderTarget& img) {
 	Emissive emissive_mat = Emissive(Vector3(1,1,1));
 	Metal metal_mat = Metal(Vector3(0.75,0.75,0.75));
 
-	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, diffuse_mat));
-	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100, diffuse_mat));
-	objects.push_back(new Sphere(Vector3(-1.5,0,-1), 0.5, metal_mat));
+	Diffuse rand_mats[4];
+	rand_mats[0] = Diffuse(Vector3(1,0,1));
+	rand_mats[1] = Diffuse(Vector3(1,1,0));
+	rand_mats[2] = Diffuse(Vector3(0,1,1));
+	rand_mats[3] = Diffuse(Vector3(1,1,1));
+
+	Emissive rand_matse[4];
+	rand_matse[0] = Emissive(Vector3(1,0,1));
+	rand_matse[1] = Emissive(Vector3(1,1,0));
+	rand_matse[2] = Emissive(Vector3(0,1,1));
+	rand_matse[3] = Emissive(Vector3(1,1,1));
+
+	for (uint i = 0; i < 50; i++) {
+		objects.push_back(new Sphere(Vector3(rand_range(-2.35,2.35),-0.45,rand_range(-1.2,1.2)), 0.05, rand_mats[rand() % 4]));
+	}
+
+	for (uint i = 0; i < 50; i++) {
+		objects.push_back(new Sphere(Vector3(rand_range(-2.35,2.35),-0.45,rand_range(-1.2,1.2)), 0.05, rand_matse[rand() % 4]));
+	}
+
+	// Create some world objects:
+	objects.push_back(new Sphere(Vector3(0,0,-1), 0.657, metal_mat));
+	objects.push_back(new Sphere(Vector3(0,-1000.5, 0), 1000, diffuse_mat));
+	//objects.push_back(new Sphere(Vector3(-1.15,-0.35,-1), 0.15, diffuse_mat));
+	//objects.push_back(new Sphere(Vector3(1.15,-0.35,-1), 0.15, emissive_mat));
 
 	// Iterate over every pixel
 	printf("Raytracing!\n");

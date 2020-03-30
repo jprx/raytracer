@@ -1,6 +1,6 @@
 # Raytracer-Boi
-
-![render.png](outputs/render.png "Render")
+<img src="outputs/render2.png" width=600 height=400/>
+<img src="outputs/render.png" width=600 height=400/>
 
 This is a fun little CPU raytracing project that will render
 raytraced images to a GTK window. 

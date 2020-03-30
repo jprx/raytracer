@@ -18,10 +18,10 @@
 #define DIM_Y ((RESOLUTION_SCALER * ASPECT_Y))
 
 // Number of samples per pixel (for anti-aliasing)
-#define NUM_SAMPLES 50
+#define NUM_SAMPLES 100
 
 // How deep can rays bounce? (Number of bounces before terminating)
-#define RAY_BOUNCE_DEPTH 100
+#define RAY_BOUNCE_DEPTH 20
 
 // How many characters wide is the progress bar?
 #define PROGRESS_BAR_WIDTH 60
