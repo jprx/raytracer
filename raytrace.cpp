@@ -1,32 +1,11 @@
 #include <iostream>
 #include <signal.h>
 #include <gtk/gtk.h>
-#include <limits>
-#include <cstdlib>
 
 #include "raytrace.h"
 #include "vector.h"
 #include "sphere.h"
-
-// Aspect dimensions and number of pixels per "dimension"
-#define ASPECT_X ((3))
-#define ASPECT_Y ((2))
-#define RESOLUTION_SCALER ((300))
-
-// Image pixel dimensions
-#define DIM_X ((RESOLUTION_SCALER * ASPECT_X))
-#define DIM_Y ((RESOLUTION_SCALER * ASPECT_Y))
-
-// Number of samples per pixel (for anti-aliasing)
-#define NUM_SAMPLES 100
-
-// How deep can rays bounce? (Number of bounces before terminating)
-#define RAY_BOUNCE_DEPTH 100
-
-// How many characters wide is the progress bar?
-#define PROGRESS_BAR_WIDTH 60
-
-using namespace std;
+#include "RenderTarget.h"
 
 // Application (this needs to be static because of SIGINT)
 static GtkApplication *__app__ = NULL;
@@ -37,31 +16,7 @@ static RenderTarget *render_target = NULL;
 // Largest value allowed for a double
 static double Infinity = std::numeric_limits<double>::infinity();
 
-// Render a quick testpattern to ensure everything is working
-bool render_testpattern(RenderTarget& img) {
-	uint x, y;
-	color_t c;
-
-	for (y = 0; y < img.h; y++) {
-		for (x = 0; x < img.w; x++) {
-			c.r = (x*1.0f)/(1.0f*img.w);
-			c.g = (y*1.0f)/(1.0f*img.h);
-			c.b = 1.0f;
-			img.setpix(x,y,&c);
-		}
-	}
-
-	// Convert internal framebuffer to GTK-friendly version
-	return img.RenderGTK();
-}
-
-// Lerp- Linear interpolate
-// Requires T to implement * and + operators
-// Assumes t only between 0.0 and 1.0
-template <typename T>
-T Lerp (T a, T b, double t) {
-	return ((1.0 - t) * a) + (t * b);
-}
+using namespace std;
 
 // Returns the sky color for a given ray
 Vector3 get_sky_color (const Ray& r) {
@@ -73,68 +28,6 @@ Vector3 get_sky_color (const Ray& r) {
 	Vector3 ray_unit = unit(r.dir);
 	double y_dist_from_bottom = (0.5 * ray_unit.y) + 0.5;
 	return Lerp(Vector3(1.0,1.0,1.0), Vector3(0.25, (166.0/255), (254.0/255)), y_dist_from_bottom);
-}
-
-// Returns a random double [0.0,1.0)
-double rand_double() {
-	// Adding the 1.0 prevents this from ever returning RAND_MAX
-	return rand() / (RAND_MAX + 1.0);
-}
-
-double rand_range(double min, double max) {
-	return Lerp(min, max, rand_double());
-}
-
-/**************************************
- *
- * sphere_collision
- *
- * Returns what scalar multiple of direction added
- * to a Ray's origin results in an intersection with 
- * the given sphere.
- *
- * See my math writeup for a derivation of this formula
- *
- * Returns -1.0 for no collision, or the closest t value
- * if a collision is detected.
- *
- * Inputs: 
- * Vector3 center: center of the sphere
- * double radius: radius of the sphere
- * Ray ray: the ray to cast
- *
- * Side Effects: None
- *
- * To find intersections, we need to solve the vector algebra equation in t:
- *
- * t^2 (b * b) + 2t b * (a-c) + (a-c) * (a-c) = radius^2
- *
- * a is the origin of our ray, b is its direction vector, and c is 
- * the center of the sphere.
- *
- * 0 solution = no collision
- * 1 solution = just touch edge of sphere
- * 2 solutions = pass through sphere and collide in two places
- *
- **************************************/
-double sphere_collision (const Vector3& center, double radius, const Ray& ray) {
-	// We only care if the number of solutions > 0 (sphere is hit)
-	Vector3 direction = ray.dir; // Could make this unit
-	double t_squared_coeff = dot(direction, direction);
-	double t_coeff = 2.0 * dot (direction, (ray.pos - center));
-	double const_coeff = dot(ray.pos - center, ray.pos - center);
-
-	// To set quadratic equation to 0, we subtract radius squared from const term
-	const_coeff -= (radius*radius);
-
-	// Return -1 for no collision, or the closest t value for a collision
-	double inside_sqrt = t_coeff * t_coeff - 4 * t_squared_coeff * const_coeff;
-	if (inside_sqrt > 0) {
-		// Solve quadratic, chose -sqrt(b^2 - 4ac)
-		return ((-1.0 * t_coeff) - sqrt(inside_sqrt)) / (2.0 * t_squared_coeff);
-	}
-
-	return -1.0;
 }
 
 /***************
@@ -174,7 +67,7 @@ Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint 
 			if (test_point.t_collision < closest_hit) {
 				closest_hit = test_point.t_collision;
 				closest_point = test_point;
-				//if (i == 1) { hit_light = true; }
+				if (i == 2) { hit_light = true; }
 			}
 		}
 		i++;
