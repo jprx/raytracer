@@ -16,3 +16,9 @@ bool Diffuse::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out,
 
 	return true;
 }
+
+// We are a light source, no further bouncing needed!
+bool Emissive::scatter_ray(const Ray& ray_in, CollisionPoint point, Ray& ray_out, Vector3& attenuation_out) {
+	attenuation_out = this->color;
+	return false;
+}

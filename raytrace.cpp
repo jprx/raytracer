@@ -77,8 +77,13 @@ Vector3 raytrace (const Ray& ray, const std::vector<WorldObject*> objects, uint 
 		// Scatter according to the object's material
 		Ray next_ray;
 		Vector3 attenuation;
-		(*hit_mat).scatter_ray(ray, closest_point, next_ray, attenuation);
-		return attenuation * raytrace(next_ray, objects, curdepth+1);
+		bool continue_bouncing = false;
+		continue_bouncing = (*hit_mat).scatter_ray(ray, closest_point, next_ray, attenuation);
+
+		if (continue_bouncing)
+			return attenuation * raytrace(next_ray, objects, curdepth+1);
+		else
+			return attenuation;
 	}
 	else {
 		// No collision, draw sky
@@ -107,10 +112,10 @@ bool render(RenderTarget& img) {
 
 	// World Objects:
 	std::vector<WorldObject*> objects;
-	Diffuse diffuse_mat1 = Diffuse(Vector3(0.5,0.5,0.5));
-	Diffuse diffuse_mat2 = Diffuse(Vector3(0,0.75,0));
-	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, diffuse_mat1));
-	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100, diffuse_mat2));
+	Diffuse diffuse_mat = Diffuse(Vector3(0.5,0.5,0.5));
+	Emissive emissive_mat = Emissive(Vector3(1,1,1));
+	objects.push_back(new Sphere(Vector3(0,0,-1), 0.5, emissive_mat));
+	objects.push_back(new Sphere(Vector3(0,-100.5, 0), 100, diffuse_mat));
 
 	// Iterate over every pixel
 	printf("Raytracing!\n");
