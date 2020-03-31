@@ -21,7 +21,7 @@
 #define NUM_SAMPLES 100
 
 // How deep can rays bounce? (Number of bounces before terminating)
-#define RAY_BOUNCE_DEPTH 20
+#define RAY_BOUNCE_DEPTH 35
 
 // How many characters wide is the progress bar?
 #define PROGRESS_BAR_WIDTH 60

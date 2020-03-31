@@ -128,12 +128,72 @@ bool render(RenderTarget& img) {
 	rand_matse[2] = Emissive(Vector3(0,1,1));
 	rand_matse[3] = Emissive(Vector3(1,1,1));
 
+	printf ("Generating random non-overlapping spheres...\n");
+
+	// This is hacky, I know, will fix eventually
+	// It does look really good though :)
+	
 	for (uint i = 0; i < 50; i++) {
-		objects.push_back(new Sphere(Vector3(rand_range(-2.35,2.35),-0.45,rand_range(-1.2,1.2)), 0.05, rand_mats[rand() % 4]));
+		bool correct_params = false;
+		double randsize = 1.0;
+		Vector3 randpos = Vector3(0,0,-1);
+		while (!correct_params) {
+			randsize = rand_range(0.05,0.075);
+			randpos = Vector3(rand_range(-2.35,2.35),-0.5 + randsize,rand_range(-2,0.5));
+			double found_it = true;
+			for (WorldObject* j : objects) {
+				double dist_between_objects = 0.0;
+				dist_between_objects += pow(((Sphere*)j)->center.x - randpos.x, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.y - randpos.y, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.z - randpos.z, 2);
+				dist_between_objects = sqrt(dist_between_objects);
+				if (dist_between_objects < (((Sphere*)j)->radius) + randsize) found_it = false;
+			}
+			if (found_it) correct_params = true;
+		}
+		objects.push_back(new Sphere(randpos, randsize, rand_mats[rand() % 4]));
 	}
 
 	for (uint i = 0; i < 50; i++) {
-		objects.push_back(new Sphere(Vector3(rand_range(-2.35,2.35),-0.45,rand_range(-1.2,1.2)), 0.05, rand_matse[rand() % 4]));
+		bool correct_params = false;
+		double randsize = 1.0;
+		Vector3 randpos = Vector3(0,0,-1);
+		while (!correct_params) {
+			randsize = rand_range(0.05,0.075);
+			randpos = Vector3(rand_range(-2.35,2.35),-0.5 + randsize,rand_range(-2,0.5));
+			double found_it = true;
+			for (WorldObject* j : objects) {
+				double dist_between_objects = 0.0;
+				dist_between_objects += pow(((Sphere*)j)->center.x - randpos.x, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.y - randpos.y, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.z - randpos.z, 2);
+				dist_between_objects = sqrt(dist_between_objects);
+				if (dist_between_objects < (((Sphere*)j)->radius) + randsize) found_it = false;
+			}
+			if (found_it) correct_params = true;
+		}
+		objects.push_back(new Sphere(randpos, randsize, rand_matse[rand() % 4]));
+	}
+
+	for (uint i = 0; i < 75; i++) {
+		bool correct_params = false;
+		double randsize = 1.0;
+		Vector3 randpos = Vector3(0,0,-1);
+		while (!correct_params) {
+			randsize = rand_range(0.05,0.075);
+			randpos = Vector3(rand_range(-2.35,2.35),-0.5 + randsize,rand_range(-2,0.5));
+			double found_it = true;
+			for (WorldObject* j : objects) {
+				double dist_between_objects = 0.0;
+				dist_between_objects += pow(((Sphere*)j)->center.x - randpos.x, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.y - randpos.y, 2);
+				dist_between_objects += pow(((Sphere*)j)->center.z - randpos.z, 2);
+				dist_between_objects = sqrt(dist_between_objects);
+				if (dist_between_objects < (((Sphere*)j)->radius) + randsize) found_it = false;
+			}
+			if (found_it) correct_params = true;
+		}
+		objects.push_back(new Sphere(randpos, randsize, metal_mat));
 	}
 
 	// Create some world objects:
