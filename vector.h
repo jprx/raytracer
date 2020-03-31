@@ -105,6 +105,7 @@ public:
 	Ray& operator=(const Ray& other) {
 		this->pos = other.pos;
 		this->dir = other.dir;
+		return *this;
 	}
 
 	Vector3 pos;
